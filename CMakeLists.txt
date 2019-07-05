@@ -6,7 +6,7 @@ project(ModelCropper)
 # Extension meta-information
 set(EXTENSION_HOMEPAGE "http://slicer.org/slicerWiki/index.php/Documentation/Nightly/Extensions/ModelCropper")
 set(EXTENSION_CATEGORY "Surface Models")
-set(EXTENSION_CONTRIBUTORS "Sebastian Andreß (LMU Munich)")
+set(EXTENSION_CONTRIBUTORS "Sebastian Andress (LMU Munich)")
 set(EXTENSION_DESCRIPTION "Simple extension that crops a surface model along a roi box. It uses vtkBooleanOperationPolyDataFilter for the cropping.")
 set(EXTENSION_ICONURL "http://www.example.com/Slicer/Extensions/ModelCropper.png")
 set(EXTENSION_SCREENSHOTURLS "http://www.example.com/Slicer/Extensions/ModelCropper/Screenshots/1.png")

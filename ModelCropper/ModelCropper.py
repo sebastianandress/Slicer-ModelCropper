@@ -18,14 +18,14 @@ class ModelCropper(ScriptedLoadableModule):
     self.parent.title = "Model Cropper" # TODO make this more human readable by adding spaces
     self.parent.categories = ["Surface Models"]
     self.parent.dependencies = []
-    self.parent.contributors = ["Sebastian Andreß (LMU Munich)"] # replace with "Firstname Lastname (Organization)"
+    self.parent.contributors = ["Sebastian Andress (LMU Munich)"] # replace with "Firstname Lastname (Organization)"
     self.parent.helpText = """
 Simple extension that crops a surface model along a roi box.
 It uses vtkBooleanOperationPolyDataFilter for the cropping.
 """
     self.parent.helpText += self.getDefaultModuleDocumentationLink()
     self.parent.acknowledgementText = """
-This file was developed by Sebastian Andreß (LMU University Hospital Munich, Germany, Department of General -, Trauma- and Reconstructive Surgery).
+This file was developed by Sebastian Andress (LMU University Hospital Munich, Germany, Department of General -, Trauma- and Reconstructive Surgery).
 """ # replace with organization, grant and thanks.
 
 #
