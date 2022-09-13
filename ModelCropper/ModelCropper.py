@@ -88,7 +88,7 @@ class ModelCropperWidget(ScriptedLoadableModuleWidget):
     # box selector
     #
     self.boxSelector = slicer.qMRMLNodeComboBox()
-    self.boxSelector.nodeTypes = ["vtkMRMLAnnotationROINode"]
+    self.boxSelector.nodeTypes = ["vtkMRMLMarkupsROINode", "vtkMRMLAnnotationROINode"]
     self.boxSelector.selectNodeUponCreation = True
     self.boxSelector.addEnabled = True
     self.boxSelector.removeEnabled = True
@@ -143,35 +143,49 @@ class ModelCropperLogic(ScriptedLoadableModuleLogic):
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
-  def run(self, inputModel, outputModel, annotationROI):
+  def run(self, inputModel, outputModel, roiNode):
 
     logging.info('Processing started')
 
-    bounds = [0]*6
-    annotationROI.GetBounds(bounds)
-
-    cube = vtk.vtkCubeSource()
-    cube.SetBounds(bounds)
-    
     triangleCube = vtk.vtkTriangleFilter()
+    cube = vtk.vtkCubeSource()
 
-    if annotationROI.GetTransformNodeID():
-      trfNode = slicer.mrmlScene.GetNodeByID(annotationROI.GetTransformNodeID())
-      trfFromWorld = vtk.vtkGeneralTransform()
-      trfNode.GetTransformToWorld(trfFromWorld)
+    if roiNode.IsA("vtkMRMLMarkupsROINode"):
+      roiDiameter = roiNode.GetSize()
+      cube.SetBounds(-roiDiameter[0]/2, roiDiameter[0]/2, -roiDiameter[1]/2, roiDiameter[1]/2, -roiDiameter[2]/2, roiDiameter[2]/2)
+      objectToWorldMatrix = roiNode.GetObjectToWorldMatrix()
+      objectToWorld = vtk.vtkTransform()
+      objectToWorld.SetMatrix(objectToWorldMatrix)
 
       transformFilter=vtk.vtkTransformPolyDataFilter()
-      transformFilter.SetTransform(trfFromWorld)
+      transformFilter.SetTransform(objectToWorld)
       transformFilter.SetInputConnection(cube.GetOutputPort())
-
       triangleCube.SetInputConnection(transformFilter.GetOutputPort())
-      
+
     else:
-      triangleCube.SetInputConnection(cube.GetOutputPort())
+      # Annotation ROI
+      bounds = [0]*6
+      roiNode.GetBounds(bounds)
+
+      cube.SetBounds(bounds)
+
+      if roiNode.GetTransformNodeID():
+        trfNode = slicer.mrmlScene.GetNodeByID(roiNode.GetTransformNodeID())
+        trfFromWorld = vtk.vtkGeneralTransform()
+        trfNode.GetTransformToWorld(trfFromWorld)
+
+        transformFilter=vtk.vtkTransformPolyDataFilter()
+        transformFilter.SetTransform(trfFromWorld)
+        transformFilter.SetInputConnection(cube.GetOutputPort())
+
+        triangleCube.SetInputConnection(transformFilter.GetOutputPort())
+
+      else:
+        triangleCube.SetInputConnection(cube.GetOutputPort())
 
 
     triangleInput = vtk.vtkTriangleFilter()
-    
+
     if inputModel.GetTransformNodeID():
       trfNode = slicer.mrmlScene.GetNodeByID(inputModel.GetTransformNodeID())
       trfFromWorld = vtk.vtkGeneralTransform()
@@ -182,7 +196,7 @@ class ModelCropperLogic(ScriptedLoadableModuleLogic):
       transformFilter.SetInputConnection(inputModel.GetPolyDataConnection())
 
       triangleInput.SetInputConnection(transformFilter.GetOutputPort())
-      
+
     else:
       triangleInput.SetInputConnection(inputModel.GetPolyDataConnection())
 
@@ -204,7 +218,7 @@ class ModelCropperLogic(ScriptedLoadableModuleLogic):
       transformFilter.SetInputConnection(boolean.GetOutputPort())
       transformFilter.Update()
       output.DeepCopy(transformFilter.GetOutput())
-    
+
     else:
       boolean.Update()
       output.DeepCopy(boolean.GetOutput())
@@ -216,7 +230,7 @@ class ModelCropperLogic(ScriptedLoadableModuleLogic):
       outputModel.SetName(inputModel.GetName() + '_cropped')
 
     else:
-      outputModel.SetAndObservePolyData(surface.GetOutput())
+      outputModel.SetAndObservePolyData(output)
       if outputModel.GetDisplayNode() == None:
         outputModel.CreateDefaultDisplayNodes()
       outputModel.GetDisplayNode().SetSliceIntersectionVisibility(True)
@@ -225,7 +239,7 @@ class ModelCropperLogic(ScriptedLoadableModuleLogic):
 
     if inputModel.GetTransformNodeID():
       outputModel.SetAndObserveTransformNodeID(inputModel.GetTransformNodeID())
-    
+
     # copy attributes
     names = vtk.vtkStringArray()
     inputModel.GetAttributeNames(names)
@@ -275,7 +289,7 @@ class ModelCropperTest(ScriptedLoadableModuleTest):
     modelsLogic = slicer.modules.models.logic()
     sphereNode = modelsLogic.AddModel(sphereSource.GetOutput())
 
-    roiNode = slicer.vtkMRMLAnnotationROINode()
+    roiNode = slicer.vtkMRMLMarkupsROINode()
     slicer.mrmlScene.AddNode(roiNode)
     roiNode.SetXYZ(1,1,1)
     roiNode.SetRadiusXYZ(5,5,5)
@@ -284,3 +298,4 @@ class ModelCropperTest(ScriptedLoadableModuleTest):
     logic.run(sphereNode, None, roiNode)
 
     self.delayDisplay('Test passed!')
+    
